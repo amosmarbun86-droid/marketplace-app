@@ -4,17 +4,17 @@ import os
 
 USER_FILE = "users.csv"
 
-# =========================
+# ===============================
 # AUTO CREATE USER FILE
-# =========================
+# ===============================
 if not os.path.exists(USER_FILE):
     pd.DataFrame(
         columns=["username", "password", "role"]
     ).to_csv(USER_FILE, index=False)
 
-# =========================
+# ===============================
 # AUTO CREATE / FIX ADMIN
-# =========================
+# ===============================
 def ensure_admin():
     users = pd.read_csv(USER_FILE)
 
@@ -27,17 +27,17 @@ def ensure_admin():
             "role": "admin"
         }])
         users = pd.concat([users, new_admin], ignore_index=True)
-        users.to_csv(USER_FILE, index=False)
     else:
         idx = admin.index[0]
         users.loc[idx, "role"] = "admin"
-        users.to_csv(USER_FILE, index=False)
+
+    users.to_csv(USER_FILE, index=False)
 
 ensure_admin()
 
-# =========================
+# ===============================
 # LOGIN PAGE
-# =========================
+# ===============================
 def login_page():
 
     users = pd.read_csv(USER_FILE)
@@ -58,10 +58,8 @@ def login_page():
                 ]
 
                 if not match.empty:
-                    st.session_state.user = {
-                        "username": username,
-                        "role": match.iloc[0]["role"]
-                    }
+                    st.session_state.user = username
+                    st.session_state.role = match.iloc[0]["role"]
                     st.rerun()
                 else:
                     st.error("Username / password salah")
