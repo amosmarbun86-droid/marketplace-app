@@ -1,73 +1,100 @@
 import streamlit as st
 import pandas as pd
 import os
-from auth_cart import *
-
-st.set_page_config(page_title="Luxury Marketplace", layout="wide", page_icon="💎")
+from auth_cart import login_page
 
 # ==============================
-# CSS LUXURY
+# CONFIG
+# ==============================
+st.set_page_config(
+    page_title="Marketplace Tawar",
+    page_icon="🛒",
+    layout="wide"
+)
+
+# ==============================
+# CSS TOKOPEDIA PRO
 # ==============================
 st.markdown("""
 <style>
 
+/* Background */
 .stApp {
-    background: linear-gradient(135deg,#141E30,#243B55);
+    background-color: #f5f5f5;
 }
 
-.block-container {
-    background: rgba(255,255,255,0.95);
-    padding: 35px;
-    border-radius: 25px;
-}
-
-/* HERO */
-.hero {
-    background: linear-gradient(90deg,#8E2DE2,#4A00E0);
-    padding: 50px;
-    border-radius: 25px;
+/* Topbar */
+.topbar {
+    background: #03AC0E;
+    padding: 15px 25px;
+    border-radius: 10px;
     color: white;
-    text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
-/* CARD */
+/* Search */
+.search-box {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* Card */
 .card {
     background: white;
-    border-radius: 20px;
-    padding: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    transition: 0.3s;
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    transition: 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 20px 45px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
 }
 
-.stButton>button {
-    background: linear-gradient(90deg,#ff512f,#dd2476);
-    color: white;
-    border-radius: 15px;
+/* Price */
+.price {
+    color: #03AC0E;
     font-weight: bold;
+    font-size: 18px;
 }
 
-section[data-testid="stSidebar"] {
-    background: linear-gradient(#8E2DE2,#4A00E0);
+/* Button */
+.stButton>button {
+    background-color: #03AC0E;
     color: white;
+    border-radius: 8px;
+    border: none;
+    width: 100%;
+}
+
+.stButton>button:hover {
+    background-color: #02930c;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: white;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================
-# LOGIN CHECK
+# SESSION
 # ==============================
 if "user" not in st.session_state:
     st.session_state.user = None
+
 if "role" not in st.session_state:
     st.session_state.role = None
 
+# ==============================
+# LOGIN
+# ==============================
 if st.session_state.user is None:
     login_page()
     st.stop()
@@ -76,65 +103,67 @@ user = st.session_state.user
 role = st.session_state.role
 
 # ==============================
-# LOAD DATA
+# FILE SETUP
 # ==============================
-products = pd.read_csv("products.csv")
+PRODUCT_FILE = "products.csv"
+OFFER_FILE = "offers.csv"
 
-if not os.path.exists("offers.csv"):
+if not os.path.exists(OFFER_FILE):
     pd.DataFrame(
         columns=["product_id","product_name","buyer","offer_price"]
-    ).to_csv("offers.csv", index=False)
+    ).to_csv(OFFER_FILE, index=False)
 
-offers = pd.read_csv("offers.csv")
+products = pd.read_csv(PRODUCT_FILE)
+offers = pd.read_csv(OFFER_FILE)
 
 # ==============================
 # SIDEBAR
 # ==============================
 with st.sidebar:
 
-    st.markdown(f"## 👤 {user}")
-    st.markdown(f"Role: **{role}**")
+    st.write(f"👤 {user}")
+    st.write(f"Role: {role}")
 
-    menu = ["🏠 Katalog"]
+    menu = ["Katalog"]
 
     if role == "buyer":
-        menu.append("💰 Tawaran Saya")
+        menu.append("Tawaran Saya")
 
     if role == "admin":
-        menu.append("📊 Dashboard Admin")
+        menu.append("Admin Panel")
 
     choice = st.radio("Menu", menu)
 
     if st.button("Logout"):
         st.session_state.user = None
+        st.session_state.role = None
         st.rerun()
 
 # ==============================
-# HERO
+# TOPBAR
 # ==============================
-st.markdown("""
-<div class="hero">
-<h1>💎 Luxury Marketplace</h1>
-<p>Pengalaman belanja modern dan eksklusif</p>
+st.markdown(f"""
+<div class="topbar">
+<h3>🛒 Marketplace Tawar</h3>
 </div>
 """, unsafe_allow_html=True)
 
 # ==============================
-# SEARCH & FILTER
+# SEARCH
 # ==============================
-col1, col2 = st.columns([3,1])
+st.markdown('<div class="search-box">', unsafe_allow_html=True)
 
-with col1:
-    search = st.text_input("🔍 Cari produk")
+search = st.text_input("🔍 Cari produk")
 
-with col2:
-    max_price = int(products["price"].max())
-    price_filter = st.slider("Filter harga", 0, max_price, max_price)
+st.markdown('</div>', unsafe_allow_html=True)
 
-filtered = products[
-    (products["is_active"] == True) &
-    (products["price"] <= price_filter)
-]
+# ==============================
+# FILTER DATA
+# ==============================
+filtered = products.copy()
+
+if "is_active" in filtered.columns:
+    filtered = filtered[filtered["is_active"] == True]
 
 if search:
     filtered = filtered[
@@ -144,29 +173,39 @@ if search:
 # ==============================
 # KATALOG
 # ==============================
-if choice == "🏠 Katalog":
+if choice == "Katalog":
 
-    cols = st.columns(4)
+    cols = st.columns(5)
 
     for i, p in filtered.iterrows():
 
-        with cols[i % 4]:
+        with cols[i % 5]:
 
             st.markdown('<div class="card">', unsafe_allow_html=True)
 
-            img = f"https://source.unsplash.com/600x400/?{p['product_name']}"
+            img = f"https://source.unsplash.com/300x200/?{p['product_name']}"
             st.image(img)
 
-            st.subheader(p["product_name"])
-            st.write(f"💰 Rp {int(p['price']):,}")
+            st.write(p["product_name"])
+
+            st.markdown(
+                f'<div class="price">Rp {int(p["price"]):,}</div>',
+                unsafe_allow_html=True
+            )
 
             if role == "buyer":
 
-                if st.button("🛒 Tambah", key=f"cart{i}"):
-                    st.success("Ditambahkan")
+                if st.button("Tambah", key=f"cart{i}"):
+                    st.success("Masuk keranjang")
 
                 with st.form(f"offer{i}"):
-                    offer = st.number_input("Tawar", 0)
+
+                    offer = st.number_input(
+                        "Harga tawar",
+                        0,
+                        key=f"offer_input{i}"
+                    )
+
                     if st.form_submit_button("Kirim Tawaran"):
 
                         new = pd.DataFrame([{
@@ -176,37 +215,42 @@ if choice == "🏠 Katalog":
                             "offer_price": offer
                         }])
 
-                        offers = pd.concat([offers, new], ignore_index=True)
-                        offers.to_csv("offers.csv", index=False)
+                        offers = pd.concat(
+                            [offers, new],
+                            ignore_index=True
+                        )
+
+                        offers.to_csv(OFFER_FILE, index=False)
 
                         st.success("Tawaran dikirim")
 
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================
-# BUYER PAGE
+# TAWARAN BUYER
 # ==============================
-elif choice == "💰 Tawaran Saya":
+elif choice == "Tawaran Saya":
 
     my = offers[offers["buyer"] == user]
-    st.dataframe(my, use_container_width=True)
+
+    if my.empty:
+        st.info("Belum ada tawaran")
+    else:
+        st.dataframe(my, use_container_width=True)
 
 # ==============================
-# ADMIN DASHBOARD
+# ADMIN PANEL
 # ==============================
-elif choice == "📊 Dashboard Admin":
+elif choice == "Admin Panel":
 
     if role != "admin":
         st.error("Akses ditolak")
         st.stop()
 
-    total_produk = len(products)
-    total_tawaran = len(offers)
-
     col1, col2 = st.columns(2)
 
-    col1.metric("Total Produk", total_produk)
-    col2.metric("Total Tawaran", total_tawaran)
+    col1.metric("Total Produk", len(products))
+    col2.metric("Total Tawaran", len(offers))
 
     st.subheader("Data Produk")
     st.dataframe(products, use_container_width=True)
