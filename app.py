@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+from auth_cart import *
 
 st.set_page_config(page_title="Marketplace Tawar", layout="wide")
 
@@ -13,105 +14,119 @@ if not os.path.exists(OFFER_FILE):
         columns=["product_id", "product_name", "buyer", "offer_price", "status"]
     ).to_csv(OFFER_FILE, index=False)
 
+# ===== LOGIN WAJIB =====
+if "user" not in st.session_state:
+    login_page()
+    st.stop()
+
+username = st.session_state.user
+
 # ===== Load data =====
 products = pd.read_csv(PRODUCT_FILE)
 offers = pd.read_csv(OFFER_FILE)
 
 st.title("🛒 Marketplace Tawar-Menawar")
+st.write("Login sebagai:", username)
 
-username = st.text_input("Nama pengguna")
+menu = st.sidebar.selectbox(
+    "Menu",
+    ["Katalog Produk", "Keranjang", "Tawaran Saya", "Admin — Kelola Tawaran"]
+)
 
-if username:
+# =====================================
+# 📦 KATALOG PRODUK
+# =====================================
+if menu == "Katalog Produk":
 
-    menu = st.sidebar.selectbox(
-        "Menu",
-        ["Katalog Produk", "Tawaran Saya", "Admin — Kelola Tawaran"]
-    )
+    st.header("📦 Katalog Produk")
 
-    # =====================================
-    # 📦 KATALOG PRODUK
-    # =====================================
-    if menu == "Katalog Produk":
+    active_products = products[products["is_active"] == True]
 
-        st.header("📦 Katalog Produk")
+    for _, p in active_products.iterrows():
 
-        active_products = products[products["is_active"] == True]
+        col1, col2 = st.columns([1, 3])
 
-        for _, p in active_products.iterrows():
+        with col1:
+            st.image(p["image_url"], width=150)
 
-            col1, col2 = st.columns([1, 3])
+        with col2:
+            st.subheader(p["product_name"])
+            st.write("Kategori:", p["category"])
+            st.write("Harga:", f"Rp {int(p['price']):,}")
+            st.write("Stok:", f"{p['stock']} {p['unit']}")
+            st.write(p["description"])
 
-            with col1:
-                st.image(p["image_url"], width=150)
+            # 🛒 Tambah ke keranjang
+            if st.button("🛒 Tambah ke Keranjang", key=f"cart_{p['product_id']}"):
+                add_to_cart(username, p)
 
-            with col2:
-                st.subheader(p["product_name"])
-                st.write("Kategori:", p["category"])
-                st.write("Harga:", f"Rp {int(p['price']):,}")
-                st.write("Stok:", f"{p['stock']} {p['unit']}")
-                st.write(p["description"])
+            # 💬 Form tawar
+            with st.form(f"offer_{p['product_id']}"):
+                offer_price = st.number_input(
+                    "Harga tawaran",
+                    min_value=0,
+                    step=1000,
+                    key=p["product_id"]
+                )
+                submit = st.form_submit_button("Ajukan Tawaran")
 
-                # Form tawar
-                with st.form(f"offer_{p['product_id']}"):
-                    offer_price = st.number_input(
-                        "Harga tawaran",
-                        min_value=0,
-                        step=1000,
-                        key=p["product_id"]
-                    )
-                    submit = st.form_submit_button("Ajukan Tawaran")
+                if submit:
+                    new_offer = pd.DataFrame([{
+                        "product_id": p["product_id"],
+                        "product_name": p["product_name"],
+                        "buyer": username,
+                        "offer_price": offer_price,
+                        "status": "Menunggu"
+                    }])
 
-                    if submit:
-                        new_offer = pd.DataFrame([{
-                            "product_id": p["product_id"],
-                            "product_name": p["product_name"],
-                            "buyer": username,
-                            "offer_price": offer_price,
-                            "status": "Menunggu"
-                        }])
+                    offers = pd.concat([offers, new_offer], ignore_index=True)
+                    offers.to_csv(OFFER_FILE, index=False)
 
-                        offers = pd.concat([offers, new_offer], ignore_index=True)
-                        offers.to_csv(OFFER_FILE, index=False)
+                    st.success("Tawaran dikirim!")
 
-                        st.success("Tawaran dikirim!")
+# =====================================
+# 🧺 KERANJANG
+# =====================================
+elif menu == "Keranjang":
+    cart_page(username)
 
-    # =====================================
-    # 📩 TAWARAN SAYA
-    # =====================================
-    elif menu == "Tawaran Saya":
+# =====================================
+# 📩 TAWARAN SAYA
+# =====================================
+elif menu == "Tawaran Saya":
 
-        st.header("📨 Tawaran Saya")
+    st.header("📨 Tawaran Saya")
 
-        my_offers = offers[offers["buyer"] == username]
+    my_offers = offers[offers["buyer"] == username]
 
-        if my_offers.empty:
-            st.info("Belum ada tawaran")
-        else:
-            st.dataframe(my_offers)
+    if my_offers.empty:
+        st.info("Belum ada tawaran")
+    else:
+        st.dataframe(my_offers)
 
-    # =====================================
-    # 🛠 ADMIN KELOLA TAWARAN
-    # =====================================
-    elif menu == "Admin — Kelola Tawaran":
+# =====================================
+# 🛠 ADMIN KELOLA TAWARAN
+# =====================================
+elif menu == "Admin — Kelola Tawaran":
 
-        st.header("📥 Semua Tawaran Masuk")
+    st.header("📥 Semua Tawaran Masuk")
 
-        pending = offers[offers["status"] == "Menunggu"]
+    pending = offers[offers["status"] == "Menunggu"]
 
-        for i, off in pending.iterrows():
+    for i, off in pending.iterrows():
 
-            st.subheader(off["product_name"])
-            st.write("Pembeli:", off["buyer"])
-            st.write("Harga tawar:", f"Rp {int(off['offer_price']):,}")
+        st.subheader(off["product_name"])
+        st.write("Pembeli:", off["buyer"])
+        st.write("Harga tawar:", f"Rp {int(off['offer_price']):,}")
 
-            col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
-            if col1.button("Terima", key=f"acc_{i}"):
-                offers.loc[i, "status"] = "Diterima"
-                offers.to_csv(OFFER_FILE, index=False)
-                st.success("Tawaran diterima!")
+        if col1.button("Terima", key=f"acc_{i}"):
+            offers.loc[i, "status"] = "Diterima"
+            offers.to_csv(OFFER_FILE, index=False)
+            st.success("Tawaran diterima!")
 
-            if col2.button("Tolak", key=f"rej_{i}"):
-                offers.loc[i, "status"] = "Ditolak"
-                offers.to_csv(OFFER_FILE, index=False)
-                st.warning("Tawaran ditolak")
+        if col2.button("Tolak", key=f"rej_{i}"):
+            offers.loc[i, "status"] = "Ditolak"
+            offers.to_csv(OFFER_FILE, index=False)
+            st.warning("Tawaran ditolak")
