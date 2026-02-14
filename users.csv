@@ -1,4 +1,4 @@
-username,password
-admin,123
-budi,123
-siti,123
+username,password,role
+admin,123,admin
+budi,123,seller
+siti,123,buyer
