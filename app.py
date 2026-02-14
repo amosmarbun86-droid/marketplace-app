@@ -17,11 +17,19 @@ st.set_page_config(
 # STYLE (MOBILE APP STYLE)
 # =====================================
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
+
+/* Global Font */
 html, body, [class*="css"] {
     font-family: 'Poppins', sans-serif;
 }
+
+/* Hide Streamlit default menu */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 
 /* Navbar */
 .navbar {
@@ -29,59 +37,80 @@ html, body, [class*="css"] {
     padding: 14px;
     border-radius: 12px;
     color: white;
-    text-align:center;
-    font-size:18px;
-    font-weight:600;
-    margin-bottom:15px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
 }
 
 /* Card */
 .card {
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
-    margin-bottom:15px;
+    background: white;
+    padding: 15px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
 }
 
+/* Price */
 .price {
-    color:#d32f2f;
-    font-size:18px;
-    font-weight:600;
+    color: #d32f2f;
+    font-size: 18px;
+    font-weight: 600;
 }
 
+/* Buttons */
 .stButton>button {
-    width:100%;
-    padding:12px;
-    font-size:15px;
-    border-radius:8px;
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: none;
+    background: #d32f2f;
+    color: white;
+}
+
+.stButton>button:hover {
+    background: #b71c1c;
 }
 
 /* Bottom Navigation */
 .bottom-nav {
-    position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
-    background:white;
-    display:flex;
-    justify-content:space-around;
-    padding:10px 0;
-    box-shadow:0 -2px 10px rgba(0,0,0,0.1);
-    z-index:999;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -3px 12px rgba(0,0,0,0.1);
+    z-index: 999;
 }
 
-.bottom-nav button {
-    background:none;
-    border:none;
-    font-size:14px;
-    font-weight:600;
+/* Safe space so content not hidden */
+.block-container {
+    padding-bottom: 90px;
 }
 
-/* Safe bottom space */
-.main {
-    padding-bottom:80px;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+
+    .navbar {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    .card {
+        padding: 12px;
+    }
+
+    .price {
+        font-size: 16px;
+    }
+
 }
+
 </style>
 """, unsafe_allow_html=True)
 
