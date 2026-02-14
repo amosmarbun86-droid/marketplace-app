@@ -1,366 +1,365 @@
-=====================================================
+# =====================================================
+# MARKETPLACE TAWAR PRO - FINAL VERSION (NO ERROR)
+# Full Professional Marketplace System
+# =====================================================
 
-MARKETPLACE TAWAR PRO - PROFESSIONAL FULL SYSTEM
+import streamlit as st
+import pandas as pd
+import os
+from datetime import datetime
 
-Features:
-
-1. Keranjang full system (tambah, hapus, total)
-
-2. Checkout + Riwayat transaksi
-
-3. Upload gambar oleh admin
-
-4. Dashboard grafik
-
-5. Badge diskon & Best Seller
-
-6. UI marketplace profesional
-
-=====================================================
-
-import streamlit as st import pandas as pd import os from datetime import datetime
-
-=====================================================
-
-PAGE CONFIG
-
-=====================================================
-
+# =====================================================
+# PAGE CONFIG
+# =====================================================
 st.set_page_config(page_title="Marketplace Tawar Pro", layout="wide", page_icon="🛒")
 
-=====================================================
+# =====================================================
+# FILE CONFIG
+# =====================================================
+USER_FILE = "users.csv"
+PRODUCT_FILE = "products.csv"
+CART_FILE = "cart.csv"
+ORDER_FILE = "orders.csv"
+IMAGE_FOLDER = "images"
 
-FILE CONFIG
+os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
-=====================================================
+# =====================================================
+# INIT FILE FUNCTION
+# =====================================================
+def init_file(file, columns):
+    if not os.path.exists(file):
+        pd.DataFrame(columns=columns).to_csv(file, index=False)
 
-USER_FILE = "users.csv" PRODUCT_FILE = "products.csv" CART_FILE = "cart.csv" ORDER_FILE = "orders.csv"
+init_file(USER_FILE, ["username","password","role"])
+init_file(PRODUCT_FILE, ["product_id","product_name","price","image","discount","best_seller","active"])
+init_file(CART_FILE, ["user","product_id","product_name","price","qty","image"])
+init_file(ORDER_FILE, ["order_id","user","product","price","qty","total","date"])
 
-=====================================================
+# =====================================================
+# CREATE DEFAULT ADMIN
+# =====================================================
+users = pd.read_csv(USER_FILE)
+if "admin" not in users.username.values:
+    admin = pd.DataFrame([{
+        "username":"admin",
+        "password":"admin123",
+        "role":"admin"
+    }])
+    users = pd.concat([users, admin], ignore_index=True)
+    users.to_csv(USER_FILE, index=False)
 
-INIT FILE
-
-=====================================================
-
-def init_file(file, columns): if not os.path.exists(file): pd.DataFrame(columns=columns).to_csv(file, index=False)
-
-init_file(USER_FILE,["username","password","role"]) init_file(PRODUCT_FILE,["product_id","product_name","price","image","discount","best_seller","active"]) init_file(CART_FILE,["user","product_id","product_name","price","qty","image"]) init_file(ORDER_FILE,["order_id","user","product","price","qty","total","date"])
-
-=====================================================
-
-DEFAULT ADMIN
-
-=====================================================
-
-users = pd.read_csv(USER_FILE) if "admin" not in users.username.values: users = pd.concat([users,pd.DataFrame([{ "username":"admin", "password":"admin123", "role":"admin" }])],ignore_index=True) users.to_csv(USER_FILE,index=False)
-
-=====================================================
-
-CSS MARKETPLACE
-
-=====================================================
-
+# =====================================================
+# CSS STYLE
+# =====================================================
 st.markdown("""
-
 <style>
-.stApp {background:#f1f3f6}
+.stApp {background-color:#f1f3f6}
 .card {
  background:white;
  padding:10px;
  border-radius:10px;
  border:1px solid #ddd;
- transition:.3s
+ transition:0.3s;
 }
 .card:hover {
- box-shadow:0 4px 15px rgba(0,0,0,.15);
- transform:translateY(-4px)
+ box-shadow:0 4px 15px rgba(0,0,0,0.15);
+ transform:translateY(-3px);
 }
 .price {color:#03ac0e;font-weight:bold;font-size:18px}
 .oldprice {text-decoration:line-through;color:gray}
 .badge {background:red;color:white;padding:2px 6px;border-radius:5px;font-size:11px}
-</style>""",unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
-=====================================================
+# =====================================================
+# SESSION
+# =====================================================
+if "user" not in st.session_state:
+    st.session_state.user = None
 
-SESSION
+if "role" not in st.session_state:
+    st.session_state.role = None
 
-=====================================================
-
-if "user" not in st.session_state: st.session_state.user=None if "role" not in st.session_state: st.session_state.role=None
-
-=====================================================
-
-LOGIN
-
-=====================================================
-
+# =====================================================
+# LOGIN PAGE
+# =====================================================
 def login_page():
 
-tab1,tab2=st.tabs(["Login","Register"])
+    tab1, tab2 = st.tabs(["Login", "Register"])
 
-with tab1:
-    u=st.text_input("Username")
-    p=st.text_input("Password",type="password")
+    with tab1:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
 
-    if st.button("Login"):
-        df=pd.read_csv(USER_FILE)
-        match=df[(df.username==u)&(df.password==p)]
-        if not match.empty:
-            st.session_state.user=u
-            st.session_state.role=match.iloc[0].role
-            st.rerun()
-        else:
-            st.error("Login gagal")
+        if st.button("Login"):
+            users = pd.read_csv(USER_FILE)
+            match = users[(users.username==username)&(users.password==password)]
 
-with tab2:
-    u=st.text_input("Username baru")
-    p=st.text_input("Password baru",type="password")
-    if st.button("Register"):
-        df=pd.read_csv(USER_FILE)
-        if u in df.username.values:
-            st.warning("Sudah ada")
-        else:
-            df=pd.concat([df,pd.DataFrame([{
-                "username":u,
-                "password":p,
-                "role":"buyer"
-            }])],ignore_index=True)
-            df.to_csv(USER_FILE,index=False)
-            st.success("Berhasil")
+            if not match.empty:
+                st.session_state.user = username
+                st.session_state.role = match.iloc[0].role
+                st.rerun()
+            else:
+                st.error("Username atau password salah")
 
-if st.session_state.user is None: login_page() st.stop()
+    with tab2:
+        new_user = st.text_input("Username baru")
+        new_pass = st.text_input("Password baru", type="password")
 
-user=st.session_state.user role=st.session_state.role
+        if st.button("Register"):
+            users = pd.read_csv(USER_FILE)
 
-=====================================================
+            if new_user in users.username.values:
+                st.warning("Username sudah ada")
+            else:
+                users = pd.concat([users, pd.DataFrame([{
+                    "username":new_user,
+                    "password":new_pass,
+                    "role":"buyer"
+                }])], ignore_index=True)
 
-LOAD DATA
+                users.to_csv(USER_FILE, index=False)
+                st.success("Akun berhasil dibuat")
 
-=====================================================
 
-products=pd.read_csv(PRODUCT_FILE) cart=pd.read_csv(CART_FILE) orders=pd.read_csv(ORDER_FILE)
+# =====================================================
+# STOP IF NOT LOGIN
+# =====================================================
+if st.session_state.user is None:
+    login_page()
+    st.stop()
 
-=====================================================
+user = st.session_state.user
+role = st.session_state.role
 
-SIDEBAR
+# =====================================================
+# LOAD DATA
+# =====================================================
+products = pd.read_csv(PRODUCT_FILE)
+cart = pd.read_csv(CART_FILE)
+orders = pd.read_csv(ORDER_FILE)
 
-=====================================================
+# =====================================================
+# SIDEBAR
+# =====================================================
+menu = ["Katalog"]
 
-menu=["Katalog"] if role=="buyer": menu+= ["Keranjang","Checkout","Riwayat"] if role=="admin": menu+= ["Admin Produk","Dashboard"]
+if role == "buyer":
+    menu += ["Keranjang", "Checkout", "Riwayat"]
 
-choice=st.sidebar.radio("Menu",menu)
+if role == "admin":
+    menu += ["Admin Produk", "Dashboard"]
 
-if st.sidebar.button("Logout"): st.session_state.user=None st.rerun()
+choice = st.sidebar.radio("Menu", menu)
 
-=====================================================
+if st.sidebar.button("Logout"):
+    st.session_state.user = None
+    st.session_state.role = None
+    st.rerun()
 
-FUNCTIONS
+# =====================================================
+# FUNCTIONS
+# =====================================================
+def add_cart(product):
 
-=====================================================
+    global cart
 
-def add_cart(p): global cart
+    exist = cart[(cart.user==user)&(cart.product_id==product.product_id)]
 
-exist=cart[(cart.user==user)&(cart.product_id==p.product_id)]
+    if not exist.empty:
+        cart.loc[exist.index, "qty"] += 1
+    else:
+        cart = pd.concat([cart, pd.DataFrame([{
+            "user":user,
+            "product_id":product.product_id,
+            "product_name":product.product_name,
+            "price":product.price,
+            "qty":1,
+            "image":product.image
+        }])], ignore_index=True)
 
-if not exist.empty:
-    cart.loc[exist.index,"qty"]+=1
-else:
-    cart=pd.concat([cart,pd.DataFrame([{
-        "user":user,
-        "product_id":p.product_id,
-        "product_name":p.product_name,
-        "price":p.price,
-        "qty":1,
-        "image":p.image
-    }])],ignore_index=True)
+    cart.to_csv(CART_FILE, index=False)
 
-cart.to_csv(CART_FILE,index=False)
 
-def remove_cart(index): global cart cart=cart.drop(index) cart.to_csv(CART_FILE,index=False)
+def remove_cart(index):
 
-=====================================================
+    global cart
 
-KATALOG
+    cart = cart.drop(index)
+    cart.to_csv(CART_FILE, index=False)
 
-=====================================================
 
-if choice=="Katalog":
+# =====================================================
+# KATALOG
+# =====================================================
+if choice == "Katalog":
 
-search=st.text_input("🔍 Cari produk")
+    search = st.text_input("🔍 Cari produk")
 
-view=products.copy()
+    view = products.copy()
 
-if search:
-    view=view[view.product_name.str.contains(search,case=False)]
+    if search:
+        view = view[view.product_name.str.contains(search, case=False, na=False)]
 
-cols=st.columns(5)
+    cols = st.columns(5)
 
-for i,p in view.iterrows():
+    for i, product in view.iterrows():
 
-    with cols[i%5]:
+        with cols[i % 5]:
 
-        st.markdown("<div class='card'>",unsafe_allow_html=True)
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-        img=p.image if pd.notna(p.image) else "https://via.placeholder.com/150"
+            image = product.image if pd.notna(product.image) and product.image != "" else "https://via.placeholder.com/150"
 
-        st.image(img)
+            st.image(image)
 
-        if p.best_seller:
-            st.markdown("<span class='badge'>Best Seller</span>",unsafe_allow_html=True)
+            st.write(product.product_name)
 
-        if p.discount>0:
-            new=int(p.price*(1-p.discount/100))
-            st.markdown(f"<div class='price'>Rp {new:,}</div>",unsafe_allow_html=True)
-            st.markdown(f"<div class='oldprice'>Rp {p.price:,}</div>",unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div class='price'>Rp {p.price:,}</div>",unsafe_allow_html=True)
+            if product.best_seller:
+                st.markdown("<span class='badge'>Best Seller</span>", unsafe_allow_html=True)
 
-        if role=="buyer":
-            if st.button("Tambah",key=i):
-                add_cart(p)
+            if product.discount > 0:
+                new_price = int(product.price * (1 - product.discount/100))
+                st.markdown(f"<div class='price'>Rp {new_price:,}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='oldprice'>Rp {product.price:,}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='price'>Rp {product.price:,}</div>", unsafe_allow_html=True)
+
+            if role == "buyer":
+                if st.button("Tambah", key=f"add{i}"):
+                    add_cart(product)
+                    st.rerun()
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+# =====================================================
+# CART
+# =====================================================
+elif choice == "Keranjang":
+
+    my_cart = cart[cart.user==user]
+
+    total = 0
+
+    for i, row in my_cart.iterrows():
+
+        col1, col2, col3, col4 = st.columns([1,3,2,1])
+
+        with col1:
+            st.image(row.image, width=60)
+
+        with col2:
+            st.write(row.product_name)
+            st.write(f"Qty: {row.qty}")
+
+        with col3:
+            subtotal = row.price * row.qty
+            total += subtotal
+            st.write(f"Rp {subtotal:,}")
+
+        with col4:
+            if st.button("❌", key=f"del{i}"):
+                remove_cart(i)
                 st.rerun()
 
-        st.markdown("</div>",unsafe_allow_html=True)
+    st.divider()
 
-=====================================================
+    st.subheader(f"Total: Rp {total:,}")
 
-CART FULL SYSTEM
 
-=====================================================
+# =====================================================
+# CHECKOUT
+# =====================================================
+elif choice == "Checkout":
 
-elif choice=="Keranjang":
+    my_cart = cart[cart.user==user]
 
-my=cart[cart.user==user]
+    total = (my_cart.price * my_cart.qty).sum()
 
-total=0
+    st.subheader(f"Total bayar: Rp {total:,}")
 
-for i,row in my.iterrows():
+    if st.button("Bayar sekarang"):
 
-    col1,col2,col3,col4=st.columns([1,3,2,1])
+        new_orders = []
 
-    with col1:
-        st.image(row.image,width=60)
+        for _, row in my_cart.iterrows():
 
-    with col2:
-        st.write(row.product_name)
-        st.write(f"Qty: {row.qty}")
+            new_orders.append({
+                "order_id": len(orders)+1,
+                "user": user,
+                "product": row.product_name,
+                "price": row.price,
+                "qty": row.qty,
+                "total": row.price*row.qty,
+                "date": datetime.now()
+            })
 
-    with col3:
-        sub=row.price*row.qty
-        total+=sub
-        st.write(f"Rp {sub:,}")
+        orders = pd.concat([orders, pd.DataFrame(new_orders)], ignore_index=True)
 
-    with col4:
-        if st.button("❌",key=i):
-            remove_cart(i)
-            st.rerun()
+        orders.to_csv(ORDER_FILE, index=False)
 
-st.divider()
-st.subheader(f"Total: Rp {total:,}")
+        cart = cart[cart.user != user]
+        cart.to_csv(CART_FILE, index=False)
 
-=====================================================
+        st.success("Pembayaran berhasil")
 
-CHECKOUT
 
-=====================================================
+# =====================================================
+# RIWAYAT
+# =====================================================
+elif choice == "Riwayat":
 
-elif choice=="Checkout":
+    my_orders = orders[orders.user==user]
 
-my=cart[cart.user==user]
+    st.dataframe(my_orders)
 
-total=(my.price*my.qty).sum()
 
-st.subheader(f"Total bayar: Rp {total:,}")
+# =====================================================
+# ADMIN PRODUK
+# =====================================================
+elif choice == "Admin Produk":
 
-if st.button("Bayar sekarang"):
+    name = st.text_input("Nama produk")
+    price = st.number_input("Harga")
+    discount = st.slider("Diskon", 0, 90)
+    best = st.checkbox("Best Seller")
 
-    new_orders=[]
+    file = st.file_uploader("Upload gambar", type=["png","jpg","jpeg"])
 
-    for _,row in my.iterrows():
+    if st.button("Tambah produk"):
 
-        new_orders.append({
-            "order_id":len(orders)+1,
-            "user":user,
-            "product":row.product_name,
-            "price":row.price,
-            "qty":row.qty,
-            "total":row.price*row.qty,
-            "date":datetime.now()
-        })
+        image_path = ""
 
-    orders=pd.concat([orders,pd.DataFrame(new_orders)],ignore_index=True)
+        if file:
+            image_path = os.path.join(IMAGE_FOLDER, file.name)
+            with open(image_path, "wb") as f:
+                f.write(file.getbuffer())
 
-    orders.to_csv(ORDER_FILE,index=False)
+        products = pd.concat([products, pd.DataFrame([{
+            "product_id": len(products)+1,
+            "product_name": name,
+            "price": price,
+            "image": image_path,
+            "discount": discount,
+            "best_seller": best,
+            "active": True
+        }])], ignore_index=True)
 
-    cart=cart[cart.user!=user]
-    cart.to_csv(CART_FILE,index=False)
+        products.to_csv(PRODUCT_FILE, index=False)
 
-    st.success("Pembayaran berhasil")
+        st.success("Produk berhasil ditambahkan")
 
-=====================================================
 
-RIWAYAT
+# =====================================================
+# DASHBOARD
+# =====================================================
+elif choice == "Dashboard":
 
-=====================================================
+    st.metric("Total Produk", len(products))
+    st.metric("Total Transaksi", len(orders))
 
-elif choice=="Riwayat":
-
-my=orders[orders.user==user]
-
-st.dataframe(my)
-
-=====================================================
-
-ADMIN PRODUK
-
-=====================================================
-
-elif choice=="Admin Produk":
-
-name=st.text_input("Nama produk")
-price=st.number_input("Harga")
-discount=st.slider("Diskon",0,90)
-best=st.checkbox("Best Seller")
-
-file=st.file_uploader("Upload gambar",type=["png","jpg","jpeg"])
-
-if st.button("Tambah"):
-
-    img_path=""
-
-    if file:
-        img_path="images/"+file.name
-        os.makedirs("images",exist_ok=True)
-        with open(img_path,"wb") as f:
-            f.write(file.getbuffer())
-
-    products=pd.concat([products,pd.DataFrame([{
-        "product_id":len(products)+1,
-        "product_name":name,
-        "price":price,
-        "image":img_path,
-        "discount":discount,
-        "best_seller":best,
-        "active":True
-    }])],ignore_index=True)
-
-    products.to_csv(PRODUCT_FILE,index=False)
-
-    st.success("Produk ditambahkan")
-
-=====================================================
-
-DASHBOARD
-
-=====================================================
-
-elif choice=="Dashboard":
-
-st.metric("Total Produk",len(products))
-st.metric("Total Transaksi",len(orders))
-
-if not orders.empty:
-
-    chart=orders.groupby("product").total.sum()
-
-    st.bar_chart(chart)
+    if not orders.empty:
+        chart = orders.groupby("product").total.sum()
+        st.bar_chart(chart)
