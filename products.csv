@@ -1,0 +1,11 @@
+product_id,product_name,category,price,stock,unit,image_url,description,is_active
+PRD001,Kaos Polos Hitam,Pakaian,75000,120,pcs,https://via.placeholder.com/150,Kaos cotton combed 30s hitam,True
+PRD002,Kaos Polos Putih,Pakaian,75000,95,pcs,https://via.placeholder.com/150,Kaos cotton combed 30s putih,True
+PRD003,Celana Jeans Pria,Pakaian,185000,40,pcs,https://via.placeholder.com/150,Jeans slim fit biru tua,True
+PRD004,Sneakers Kasual,Sepatu,325000,30,pasang,https://via.placeholder.com/150,Sneakers nyaman harian,True
+PRD005,Topi Baseball,Aksesoris,45000,60,pcs,https://via.placeholder.com/150,Topi katun adjustable,True
+PRD006,Tas Ransel,Tas,210000,25,pcs,https://via.placeholder.com/150,Ransel anti air,True
+PRD007,Hoodie Polos,Pakaian,165000,50,pcs,https://via.placeholder.com/150,Hoodie fleece tebal,True
+PRD008,Sandal Gunung,Sepatu,95000,70,pasang,https://via.placeholder.com/150,Sandal outdoor kuat,True
+PRD009,Dompet Kulit,Aksesoris,120000,35,pcs,https://via.placeholder.com/150,Dompet kulit sintetis,True
+PRD010,Kacamata Hitam,Aksesoris,85000,80,pcs,https://via.placeholder.com/150,Kacamata UV protection,True
