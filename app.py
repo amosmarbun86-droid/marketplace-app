@@ -20,18 +20,22 @@ if "user" not in st.session_state:
     st.stop()
 
 username = st.session_state.user
+role = st.session_state.role
 
 # ===== Load data =====
 products = pd.read_csv(PRODUCT_FILE)
 offers = pd.read_csv(OFFER_FILE)
 
 st.title("🛒 Marketplace Tawar-Menawar")
-st.write("Login sebagai:", username)
+st.write(f"Login sebagai: {username} ({role})")
 
-menu = st.sidebar.selectbox(
-    "Menu",
-    ["Katalog Produk", "Keranjang", "Tawaran Saya", "Admin — Kelola Tawaran"]
-)
+# ===== MENU BERDASARKAN ROLE =====
+menu_list = ["Katalog Produk", "Keranjang", "Tawaran Saya"]
+
+if role == "admin":
+    menu_list.append("Admin — Kelola Tawaran")
+
+menu = st.sidebar.selectbox("Menu", menu_list)
 
 # =====================================
 # 📦 KATALOG PRODUK
@@ -56,11 +60,9 @@ if menu == "Katalog Produk":
             st.write("Stok:", f"{p['stock']} {p['unit']}")
             st.write(p["description"])
 
-            # 🛒 Tambah ke keranjang
             if st.button("🛒 Tambah ke Keranjang", key=f"cart_{p['product_id']}"):
                 add_to_cart(username, p)
 
-            # 💬 Form tawar
             with st.form(f"offer_{p['product_id']}"):
                 offer_price = st.number_input(
                     "Harga tawaran",
@@ -105,7 +107,7 @@ elif menu == "Tawaran Saya":
         st.dataframe(my_offers)
 
 # =====================================
-# 🛠 ADMIN KELOLA TAWARAN
+# 🛠 ADMIN SAJA
 # =====================================
 elif menu == "Admin — Kelola Tawaran":
 
