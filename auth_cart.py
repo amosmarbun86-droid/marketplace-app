@@ -6,7 +6,9 @@ USER_FILE = "users.csv"
 CART_FILE = "cart.csv"
 ORDER_FILE = "orders.csv"
 
-# ===== AUTO CREATE FILE =====
+# =====================================
+# AUTO CREATE FILE
+# =====================================
 if not os.path.exists(USER_FILE):
     pd.DataFrame(
         columns=["username", "password", "role"]
@@ -25,7 +27,7 @@ if not os.path.exists(ORDER_FILE):
 
 
 # =====================================
-# 🔐 LOGIN & REGISTER DENGAN ROLE
+# 🔐 LOGIN & REGISTER
 # =====================================
 def login_page():
 
@@ -33,12 +35,20 @@ def login_page():
 
     tab1, tab2 = st.tabs(["Login", "Daftar"])
 
-    # ===== LOGIN =====
+    # ================= LOGIN =================
     with tab1:
-        u = st.text_input("Username")
-        p = st.text_input("Password", type="password")
 
-        if st.button("Login"):
+        with st.form("login_form"):
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
+            login_btn = st.form_submit_button("Login")
+
+        if login_btn:
+
+            if u == "" or p == "":
+                st.error("Username dan password wajib diisi")
+                return
+
             match = users[
                 (users["username"] == u) &
                 (users["password"] == p)
@@ -50,19 +60,33 @@ def login_page():
                 st.success("Login berhasil")
                 st.rerun()
             else:
-                st.error("Username/password salah")
+                st.error("Username / password salah")
 
-    # ===== REGISTER =====
+
+    # ================= REGISTER =================
     with tab2:
-        u = st.text_input("Username baru")
-        p = st.text_input("Password baru", type="password")
 
-        role = st.selectbox(
-            "Daftar sebagai",
-            ["buyer", "seller"]
-        )
+        with st.form("register_form"):
+            u = st.text_input("Username baru")
+            p = st.text_input("Password baru", type="password")
 
-        if st.button("Daftar"):
+            role = st.selectbox(
+                "Daftar sebagai",
+                ["buyer", "seller"]
+            )
+
+            register_btn = st.form_submit_button("Daftar")
+
+        if register_btn:
+
+            if u == "" or p == "":
+                st.error("Username dan password wajib diisi")
+                return
+
+            if u in users["username"].values:
+                st.error("Username sudah digunakan")
+                return
+
             new = pd.DataFrame([{
                 "username": u,
                 "password": p,
@@ -71,64 +95,5 @@ def login_page():
 
             users = pd.concat([users, new], ignore_index=True)
             users.to_csv(USER_FILE, index=False)
-            st.success("Akun berhasil dibuat")
 
-
-# =====================================
-# 🛒 TAMBAH KE KERANJANG
-# =====================================
-def add_to_cart(user, product):
-
-    cart = pd.read_csv(CART_FILE)
-
-    new_item = pd.DataFrame([{
-        "buyer": user,
-        "product_id": product["product_id"],
-        "product_name": product["product_name"],
-        "price": product["price"],
-        "qty": 1
-    }])
-
-    cart = pd.concat([cart, new_item], ignore_index=True)
-    cart.to_csv(CART_FILE, index=False)
-
-    st.success("Produk masuk keranjang")
-
-
-# =====================================
-# 🧺 HALAMAN KERANJANG
-# =====================================
-def cart_page(user):
-
-    cart = pd.read_csv(CART_FILE)
-    my_cart = cart[cart["buyer"] == user]
-
-    st.header("🧺 Keranjang Saya")
-
-    if my_cart.empty:
-        st.info("Keranjang kosong")
-        return
-
-    st.dataframe(my_cart)
-
-    total = (my_cart["price"] * my_cart["qty"]).sum()
-    st.subheader(f"Total: Rp {int(total):,}")
-
-    if st.button("Checkout"):
-
-        orders = pd.read_csv(ORDER_FILE)
-
-        new_order = pd.DataFrame([{
-            "order_id": len(orders) + 1,
-            "buyer": user,
-            "total": total
-        }])
-
-        orders = pd.concat([orders, new_order], ignore_index=True)
-        orders.to_csv(ORDER_FILE, index=False)
-
-        # Hapus keranjang user
-        cart = cart[cart["buyer"] != user]
-        cart.to_csv(CART_FILE, index=False)
-
-        st.success("Checkout berhasil!")
+            st.success("Akun berhasil dibuat! Silakan login.")
