@@ -27,17 +27,14 @@ if not os.path.exists(ORDER_FILE):
 
 
 # =====================================
-# AUTO CREATE / FIX ADMIN (FULL AUTO)
+# AUTO CREATE / FIX ADMIN
 # =====================================
 def ensure_admin():
 
     users = pd.read_csv(USER_FILE)
 
-    admin_exists = users[
-        users["username"] == "admin"
-    ]
+    admin_exists = users[users["username"] == "admin"]
 
-    # jika admin belum ada → buat
     if admin_exists.empty:
 
         new_admin = pd.DataFrame([{
@@ -49,7 +46,6 @@ def ensure_admin():
         users = pd.concat([users, new_admin], ignore_index=True)
         users.to_csv(USER_FILE, index=False)
 
-    # jika admin ada tapi role salah → perbaiki otomatis
     else:
 
         idx = admin_exists.index[0]
@@ -59,7 +55,6 @@ def ensure_admin():
             users.to_csv(USER_FILE, index=False)
 
 
-# jalankan otomatis saat import
 ensure_admin()
 
 
@@ -71,6 +66,7 @@ def login_page():
     users = pd.read_csv(USER_FILE)
 
     tab1, tab2 = st.tabs(["Login", "Daftar"])
+
 
     # LOGIN
     with tab1:
@@ -132,10 +128,13 @@ def login_page():
                     "role": role
                 }])
 
-                users = pd.concat(users, new_user, ignore_index=True)
+                # ✅ FIX concat
+                users = pd.concat([users, new_user], ignore_index=True)
+
                 users.to_csv(USER_FILE, index=False)
 
                 st.success("Akun berhasil dibuat")
+                st.rerun()
 
 
 # =====================================
@@ -164,7 +163,8 @@ def add_to_cart(user, product):
             "qty": 1
         }])
 
-        cart = pd.concat(cart, new_item, ignore_index=True)
+        # ✅ FIX concat
+        cart = pd.concat([cart, new_item], ignore_index=True)
 
     cart.to_csv(CART_FILE, index=False)
 
@@ -203,6 +203,7 @@ def cart_page(user):
         }])
 
         orders = pd.concat([orders, new_order], ignore_index=True)
+
         orders.to_csv(ORDER_FILE, index=False)
 
         cart = cart[cart["buyer"] != user]
