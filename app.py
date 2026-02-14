@@ -1,365 +1,349 @@
-# =====================================================
-# MARKETPLACE TAWAR PRO - FINAL VERSION (NO ERROR)
-# Full Professional Marketplace System
-# =====================================================
-
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime
 
-# =====================================================
-# PAGE CONFIG
-# =====================================================
-st.set_page_config(page_title="Marketplace Tawar Pro", layout="wide", page_icon="🛒")
+# =====================================
+# CONFIG
+# =====================================
+st.set_page_config(
+    page_title="Marketplace Premium",
+    layout="wide",
+    page_icon="🛒"
+)
 
-# =====================================================
-# FILE CONFIG
-# =====================================================
+# =====================================
+# FILE PATH
+# =====================================
 USER_FILE = "users.csv"
 PRODUCT_FILE = "products.csv"
 CART_FILE = "cart.csv"
 ORDER_FILE = "orders.csv"
-IMAGE_FOLDER = "images"
 
-os.makedirs(IMAGE_FOLDER, exist_ok=True)
-
-# =====================================================
-# INIT FILE FUNCTION
-# =====================================================
+# =====================================
+# AUTO CREATE FILE
+# =====================================
 def init_file(file, columns):
     if not os.path.exists(file):
         pd.DataFrame(columns=columns).to_csv(file, index=False)
 
 init_file(USER_FILE, ["username","password","role"])
-init_file(PRODUCT_FILE, ["product_id","product_name","price","image","discount","best_seller","active"])
-init_file(CART_FILE, ["user","product_id","product_name","price","qty","image"])
-init_file(ORDER_FILE, ["order_id","user","product","price","qty","total","date"])
+init_file(PRODUCT_FILE, ["product_id","product_name","price","image_url","discount","best"])
+init_file(CART_FILE, ["user","product_id","product_name","price","qty"])
+init_file(ORDER_FILE, ["order_id","user","product","total"])
 
-# =====================================================
-# CREATE DEFAULT ADMIN
-# =====================================================
+# =====================================
+# DEFAULT ADMIN
+# =====================================
 users = pd.read_csv(USER_FILE)
-if "admin" not in users.username.values:
-    admin = pd.DataFrame([{
+if "admin" not in users["username"].values:
+    new = pd.DataFrame([{
         "username":"admin",
         "password":"admin123",
         "role":"admin"
     }])
-    users = pd.concat([users, admin], ignore_index=True)
-    users.to_csv(USER_FILE, index=False)
+    users = pd.concat([users,new])
+    users.to_csv(USER_FILE,index=False)
 
-# =====================================================
-# CSS STYLE
-# =====================================================
+# =====================================
+# PREMIUM UI
+# =====================================
 st.markdown("""
 <style>
-.stApp {background-color:#f1f3f6}
+
+.stApp {
+background:
+linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)),
+url("https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a");
+background-size:cover;
+}
+
+.banner {
+background:linear-gradient(90deg,#03AC0E,#00c853);
+padding:20px;
+border-radius:15px;
+color:white;
+font-size:28px;
+font-weight:bold;
+text-align:center;
+margin-bottom:20px;
+}
+
 .card {
- background:white;
- padding:10px;
- border-radius:10px;
- border:1px solid #ddd;
- transition:0.3s;
+background:white;
+padding:15px;
+border-radius:15px;
+transition:0.3s;
 }
+
 .card:hover {
- box-shadow:0 4px 15px rgba(0,0,0,0.15);
- transform:translateY(-3px);
+transform:translateY(-5px);
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
 }
-.price {color:#03ac0e;font-weight:bold;font-size:18px}
-.oldprice {text-decoration:line-through;color:gray}
-.badge {background:red;color:white;padding:2px 6px;border-radius:5px;font-size:11px}
+
+.price {
+color:#03AC0E;
+font-size:20px;
+font-weight:bold;
+}
+
+.stButton>button {
+background:#03AC0E;
+color:white;
+border-radius:10px;
+}
+
+section[data-testid="stSidebar"] {
+background:linear-gradient(180deg,#03AC0E,#028a0f);
+}
+
+section[data-testid="stSidebar"] * {
+color:white !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# =====================================================
+st.markdown('<div class="banner">🛒 Marketplace Premium Indonesia</div>', unsafe_allow_html=True)
+
+# =====================================
 # SESSION
-# =====================================================
+# =====================================
 if "user" not in st.session_state:
     st.session_state.user = None
-
 if "role" not in st.session_state:
     st.session_state.role = None
 
-# =====================================================
+# =====================================
 # LOGIN PAGE
-# =====================================================
-def login_page():
+# =====================================
+def login():
 
-    tab1, tab2 = st.tabs(["Login", "Register"])
+    tab1, tab2 = st.tabs(["Login","Register"])
+
+    users = pd.read_csv(USER_FILE)
 
     with tab1:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        u = st.text_input("Username")
+        p = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            users = pd.read_csv(USER_FILE)
-            match = users[(users.username==username)&(users.password==password)]
+            match = users[(users.username==u)&(users.password==p)]
 
             if not match.empty:
-                st.session_state.user = username
-                st.session_state.role = match.iloc[0].role
+                st.session_state.user = u
+                st.session_state.role = match.iloc[0]["role"]
                 st.rerun()
             else:
-                st.error("Username atau password salah")
+                st.error("Login gagal")
 
     with tab2:
-        new_user = st.text_input("Username baru")
-        new_pass = st.text_input("Password baru", type="password")
+        u = st.text_input("Username baru")
+        p = st.text_input("Password baru", type="password")
 
         if st.button("Register"):
-            users = pd.read_csv(USER_FILE)
+            new = pd.DataFrame([{
+                "username":u,
+                "password":p,
+                "role":"buyer"
+            }])
 
-            if new_user in users.username.values:
-                st.warning("Username sudah ada")
-            else:
-                users = pd.concat([users, pd.DataFrame([{
-                    "username":new_user,
-                    "password":new_pass,
-                    "role":"buyer"
-                }])], ignore_index=True)
+            users = pd.concat([users,new])
+            users.to_csv(USER_FILE,index=False)
+            st.success("Berhasil daftar")
 
-                users.to_csv(USER_FILE, index=False)
-                st.success("Akun berhasil dibuat")
-
-
-# =====================================================
-# STOP IF NOT LOGIN
-# =====================================================
 if st.session_state.user is None:
-    login_page()
+    login()
     st.stop()
 
-user = st.session_state.user
-role = st.session_state.role
-
-# =====================================================
+# =====================================
 # LOAD DATA
-# =====================================================
+# =====================================
 products = pd.read_csv(PRODUCT_FILE)
 cart = pd.read_csv(CART_FILE)
 orders = pd.read_csv(ORDER_FILE)
 
-# =====================================================
+user = st.session_state.user
+role = st.session_state.role
+
+# =====================================
 # SIDEBAR
-# =====================================================
-menu = ["Katalog"]
+# =====================================
+menu = ["Katalog","Keranjang","Checkout","Riwayat"]
 
-if role == "buyer":
-    menu += ["Keranjang", "Checkout", "Riwayat"]
-
-if role == "admin":
-    menu += ["Admin Produk", "Dashboard"]
+if role=="admin":
+    menu += ["Admin Produk","Dashboard"]
 
 choice = st.sidebar.radio("Menu", menu)
 
 if st.sidebar.button("Logout"):
-    st.session_state.user = None
-    st.session_state.role = None
+    st.session_state.user=None
     st.rerun()
 
-# =====================================================
-# FUNCTIONS
-# =====================================================
-def add_cart(product):
-
-    global cart
-
-    exist = cart[(cart.user==user)&(cart.product_id==product.product_id)]
-
-    if not exist.empty:
-        cart.loc[exist.index, "qty"] += 1
-    else:
-        cart = pd.concat([cart, pd.DataFrame([{
-            "user":user,
-            "product_id":product.product_id,
-            "product_name":product.product_name,
-            "price":product.price,
-            "qty":1,
-            "image":product.image
-        }])], ignore_index=True)
-
-    cart.to_csv(CART_FILE, index=False)
-
-
-def remove_cart(index):
-
-    global cart
-
-    cart = cart.drop(index)
-    cart.to_csv(CART_FILE, index=False)
-
-
-# =====================================================
+# =====================================
 # KATALOG
-# =====================================================
-if choice == "Katalog":
+# =====================================
+if choice=="Katalog":
 
-    search = st.text_input("🔍 Cari produk")
+    cols = st.columns(4)
 
-    view = products.copy()
+    for i,p in products.iterrows():
 
-    if search:
-        view = view[view.product_name.str.contains(search, case=False, na=False)]
+        with cols[i%4]:
 
-    cols = st.columns(5)
+            st.markdown("<div class='card'>",unsafe_allow_html=True)
 
-    for i, product in view.iterrows():
+            img = p.image_url if pd.notna(p.image_url) else "https://via.placeholder.com/300"
 
-        with cols[i % 5]:
+            st.image(img)
 
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            st.write(p.product_name)
 
-            image = product.image if pd.notna(product.image) and product.image != "" else "https://via.placeholder.com/150"
+            price = p.price
 
-            st.image(image)
-
-            st.write(product.product_name)
-
-            if product.best_seller:
-                st.markdown("<span class='badge'>Best Seller</span>", unsafe_allow_html=True)
-
-            if product.discount > 0:
-                new_price = int(product.price * (1 - product.discount/100))
-                st.markdown(f"<div class='price'>Rp {new_price:,}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='oldprice'>Rp {product.price:,}</div>", unsafe_allow_html=True)
+            if p.discount>0:
+                new_price = int(price*(1-p.discount/100))
+                st.markdown(f"<div class='price'>Rp {new_price:,}</div>",unsafe_allow_html=True)
+                st.caption(f"Diskon {p.discount}%")
             else:
-                st.markdown(f"<div class='price'>Rp {product.price:,}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='price'>Rp {price:,}</div>",unsafe_allow_html=True)
 
-            if role == "buyer":
-                if st.button("Tambah", key=f"add{i}"):
-                    add_cart(product)
-                    st.rerun()
+            if role=="buyer":
+                if st.button("Tambah", key=i):
 
-            st.markdown("</div>", unsafe_allow_html=True)
+                    exist = cart[(cart.user==user)&(cart.product_id==p.product_id)]
 
+                    if not exist.empty:
+                        cart.loc[exist.index,"qty"] +=1
+                    else:
+                        new = pd.DataFrame([{
+                            "user":user,
+                            "product_id":p.product_id,
+                            "product_name":p.product_name,
+                            "price":p.price,
+                            "qty":1
+                        }])
+                        cart = pd.concat([cart,new])
 
-# =====================================================
-# CART
-# =====================================================
-elif choice == "Keranjang":
+                    cart.to_csv(CART_FILE,index=False)
+                    st.success("Ditambahkan")
 
-    my_cart = cart[cart.user==user]
+            st.markdown("</div>",unsafe_allow_html=True)
 
-    total = 0
+# =====================================
+# KERANJANG
+# =====================================
+elif choice=="Keranjang":
 
-    for i, row in my_cart.iterrows():
+    my = cart[cart.user==user]
 
-        col1, col2, col3, col4 = st.columns([1,3,2,1])
+    if my.empty:
+        st.info("Kosong")
+    else:
 
-        with col1:
-            st.image(row.image, width=60)
+        for i,row in my.iterrows():
 
-        with col2:
-            st.write(row.product_name)
-            st.write(f"Qty: {row.qty}")
+            col1,col2,col3 = st.columns([4,2,1])
 
-        with col3:
-            subtotal = row.price * row.qty
-            total += subtotal
-            st.write(f"Rp {subtotal:,}")
+            col1.write(row.product_name)
+            col2.write(f"x{row.qty}")
 
-        with col4:
-            if st.button("❌", key=f"del{i}"):
-                remove_cart(i)
+            if col3.button("Hapus",key=i):
+                cart = cart.drop(i)
+                cart.to_csv(CART_FILE,index=False)
                 st.rerun()
 
-    st.divider()
+        total = (my.price*my.qty).sum()
 
-    st.subheader(f"Total: Rp {total:,}")
+        st.subheader(f"Total: Rp {total:,}")
 
-
-# =====================================================
+# =====================================
 # CHECKOUT
-# =====================================================
-elif choice == "Checkout":
+# =====================================
+elif choice=="Checkout":
 
-    my_cart = cart[cart.user==user]
+    my = cart[cart.user==user]
 
-    total = (my_cart.price * my_cart.qty).sum()
+    if my.empty:
+        st.warning("Kosong")
+    else:
 
-    st.subheader(f"Total bayar: Rp {total:,}")
+        total = (my.price*my.qty).sum()
 
-    if st.button("Bayar sekarang"):
+        st.write("Total:", total)
 
-        new_orders = []
+        if st.button("Bayar"):
 
-        for _, row in my_cart.iterrows():
+            oid = len(orders)+1
 
-            new_orders.append({
-                "order_id": len(orders)+1,
-                "user": user,
-                "product": row.product_name,
-                "price": row.price,
-                "qty": row.qty,
-                "total": row.price*row.qty,
-                "date": datetime.now()
-            })
+            for i,row in my.iterrows():
 
-        orders = pd.concat([orders, pd.DataFrame(new_orders)], ignore_index=True)
+                new = pd.DataFrame([{
+                    "order_id":oid,
+                    "user":user,
+                    "product":row.product_name,
+                    "total":row.price*row.qty
+                }])
 
-        orders.to_csv(ORDER_FILE, index=False)
+                orders = pd.concat([orders,new])
 
-        cart = cart[cart.user != user]
-        cart.to_csv(CART_FILE, index=False)
+            orders.to_csv(ORDER_FILE,index=False)
 
-        st.success("Pembayaran berhasil")
+            cart = cart[cart.user!=user]
+            cart.to_csv(CART_FILE,index=False)
 
+            st.success("Checkout berhasil")
 
-# =====================================================
+# =====================================
 # RIWAYAT
-# =====================================================
-elif choice == "Riwayat":
+# =====================================
+elif choice=="Riwayat":
 
-    my_orders = orders[orders.user==user]
+    my = orders[orders.user==user]
 
-    st.dataframe(my_orders)
+    st.dataframe(my)
 
-
-# =====================================================
+# =====================================
 # ADMIN PRODUK
-# =====================================================
-elif choice == "Admin Produk":
+# =====================================
+elif choice=="Admin Produk":
 
-    name = st.text_input("Nama produk")
-    price = st.number_input("Harga")
-    discount = st.slider("Diskon", 0, 90)
-    best = st.checkbox("Best Seller")
+    if role!="admin":
+        st.stop()
 
-    file = st.file_uploader("Upload gambar", type=["png","jpg","jpeg"])
+    with st.form("add"):
 
-    if st.button("Tambah produk"):
+        name = st.text_input("Nama produk")
+        price = st.number_input("Harga")
+        img = st.text_input("Image URL")
+        disc = st.number_input("Diskon",0,100)
+        best = st.checkbox("Best seller")
 
-        image_path = ""
+        if st.form_submit_button("Tambah"):
 
-        if file:
-            image_path = os.path.join(IMAGE_FOLDER, file.name)
-            with open(image_path, "wb") as f:
-                f.write(file.getbuffer())
+            pid = len(products)+1
 
-        products = pd.concat([products, pd.DataFrame([{
-            "product_id": len(products)+1,
-            "product_name": name,
-            "price": price,
-            "image": image_path,
-            "discount": discount,
-            "best_seller": best,
-            "active": True
-        }])], ignore_index=True)
+            new = pd.DataFrame([{
+                "product_id":pid,
+                "product_name":name,
+                "price":price,
+                "image_url":img,
+                "discount":disc,
+                "best":best
+            }])
 
-        products.to_csv(PRODUCT_FILE, index=False)
+            products = pd.concat([products,new])
+            products.to_csv(PRODUCT_FILE,index=False)
 
-        st.success("Produk berhasil ditambahkan")
+            st.success("Produk ditambah")
 
-
-# =====================================================
+# =====================================
 # DASHBOARD
-# =====================================================
-elif choice == "Dashboard":
+# =====================================
+elif choice=="Dashboard":
 
     st.metric("Total Produk", len(products))
-    st.metric("Total Transaksi", len(orders))
+    st.metric("Total Order", len(orders))
 
     if not orders.empty:
-        chart = orders.groupby("product").total.sum()
+        chart = orders.groupby("user").total.sum()
         st.bar_chart(chart)
