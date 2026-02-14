@@ -8,7 +8,9 @@ ORDER_FILE = "orders.csv"
 
 # ===== AUTO CREATE FILE =====
 if not os.path.exists(USER_FILE):
-    pd.DataFrame(columns=["username", "password"]).to_csv(USER_FILE, index=False)
+    pd.DataFrame(
+        columns=["username", "password", "role"]
+    ).to_csv(USER_FILE, index=False)
 
 if not os.path.exists(CART_FILE):
     pd.DataFrame(columns=[
@@ -23,7 +25,7 @@ if not os.path.exists(ORDER_FILE):
 
 
 # =====================================
-# 🔐 LOGIN & REGISTER
+# 🔐 LOGIN & REGISTER DENGAN ROLE
 # =====================================
 def login_page():
 
@@ -31,26 +33,42 @@ def login_page():
 
     tab1, tab2 = st.tabs(["Login", "Daftar"])
 
-    # LOGIN
+    # ===== LOGIN =====
     with tab1:
         u = st.text_input("Username")
         p = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            if ((users["username"] == u) & (users["password"] == p)).any():
+            match = users[
+                (users["username"] == u) &
+                (users["password"] == p)
+            ]
+
+            if not match.empty:
                 st.session_state.user = u
+                st.session_state.role = match.iloc[0]["role"]
                 st.success("Login berhasil")
                 st.rerun()
             else:
                 st.error("Username/password salah")
 
-    # REGISTER
+    # ===== REGISTER =====
     with tab2:
         u = st.text_input("Username baru")
         p = st.text_input("Password baru", type="password")
 
+        role = st.selectbox(
+            "Daftar sebagai",
+            ["buyer", "seller"]
+        )
+
         if st.button("Daftar"):
-            new = pd.DataFrame([{"username": u, "password": p}])
+            new = pd.DataFrame([{
+                "username": u,
+                "password": p,
+                "role": role
+            }])
+
             users = pd.concat([users, new], ignore_index=True)
             users.to_csv(USER_FILE, index=False)
             st.success("Akun berhasil dibuat")
@@ -109,7 +127,7 @@ def cart_page(user):
         orders = pd.concat([orders, new_order], ignore_index=True)
         orders.to_csv(ORDER_FILE, index=False)
 
-        # Kosongkan keranjang user
+        # Hapus keranjang user
         cart = cart[cart["buyer"] != user]
         cart.to_csv(CART_FILE, index=False)
 
