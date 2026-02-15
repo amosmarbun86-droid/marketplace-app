@@ -16,6 +16,89 @@ st.set_page_config(
 )
 
 # =====================================================
+# STYLE (FORCE LIGHT + PREMIUM UI)
+# =====================================================
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+
+body {
+    background-color: #f5f7fa !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background-color: #f5f7fa !important;
+}
+
+[data-testid="stHeader"] {
+    background: transparent;
+}
+
+html, body, [class*="css"] {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* NAVBAR */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 14px 30px;
+    z-index: 9999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.nav-logo {
+    font-weight: 700;
+    font-size: 20px;
+    color: #d32f2f;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-weight: 500;
+}
+
+.block-container {
+    margin-top: 110px;
+}
+
+/* PRODUCT CARD */
+.card {
+    background: white;
+    padding:18px;
+    border-radius:18px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.08);
+    margin-bottom:20px;
+    transition:0.3s ease;
+}
+
+.card:hover {
+    transform:translateY(-8px);
+    box-shadow:0 16px 40px rgba(0,0,0,0.15);
+}
+
+.price {
+    color:#d32f2f;
+    font-weight:600;
+    font-size:18px;
+}
+
+.search-box input {
+    border-radius:20px !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =====================================================
 # SECURITY
 # =====================================================
 def hash_password(password):
@@ -24,66 +107,6 @@ def hash_password(password):
 def show_loading(msg="Memproses..."):
     with st.spinner(msg):
         time.sleep(1)
-
-# =====================================================
-# STYLE (PREMIUM NAVBAR)
-# =====================================================
-st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-html, body, [class*="css"] {font-family: 'Poppins', sans-serif;}
-
-.navbar {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-background: white;
-padding: 12px 30px;
-z-index: 9999;
-display: flex;
-justify-content: space-between;
-align-items: center;
-box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-}
-
-.nav-logo {
-font-weight: 700;
-font-size: 20px;
-color: #d32f2f;
-}
-
-.nav-right {
-display: flex;
-align-items: center;
-gap: 20px;
-font-weight: 500;
-}
-
-.block-container {
-margin-top: 110px;
-}
-
-.card {
-background: white;
-padding:18px;
-border-radius:16px;
-box-shadow:0 6px 18px rgba(0,0,0,0.1);
-margin-bottom:20px;
-transition:0.3s;
-}
-.card:hover {
-transform:translateY(-6px);
-box-shadow:0 12px 30px rgba(0,0,0,0.2);
-}
-
-.price {
-color:#d32f2f;
-font-weight:600;
-font-size:18px;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # =====================================================
 # FILE SETUP
@@ -115,11 +138,11 @@ init_file(ORDER_FILE,[
 # =====================================================
 def seed_products():
     products=pd.read_csv(PRODUCT_FILE)
-    if len(products)>=100: return
+    if len(products)>=100:
+        return
 
-    categories=["Obat Umum","Obat Anak","Vitamin",
-                "Obat Flu","Antibiotik",
-                "Herbal","Alat Kesehatan"]
+    categories=["Obat Umum","Vitamin","Obat Anak",
+                "Obat Flu","Herbal","Antibiotik"]
 
     names=["Paracetamol","Ibuprofen","Vitamin C",
            "Amoxicillin","OBH","Panadol",
@@ -138,6 +161,7 @@ def seed_products():
             "rating":round(random.uniform(3.5,5.0),1),
             "seller":"admin"
         })
+
     pd.DataFrame(data).to_csv(PRODUCT_FILE,index=False)
 
 seed_products()
@@ -216,7 +240,7 @@ role=st.session_state.role
 cart_count=len(cart[cart.user==user])
 
 # =====================================================
-# NAVBAR PREMIUM
+# NAVBAR
 # =====================================================
 st.markdown(f"""
 <div class="navbar">
@@ -235,53 +259,28 @@ if search:
         products["product_name"].str.contains(search,case=False,na=False)
     ]
 
-# NAV BUTTON
-nav1,nav2,nav3=st.columns(3)
-
-if nav1.button("🏠 Home"):
-    st.session_state.page="Katalog"
-    st.rerun()
-
-if role=="admin":
-    if nav2.button("📊 Statistik"):
-        st.session_state.page="Dashboard"
-        st.rerun()
-
-if nav3.button("🚪 Logout"):
-    st.session_state.user=None
-    st.session_state.role=None
-    st.rerun()
-
 # =====================================================
-# KATALOG
+# GRID PRODUK RESPONSIVE
 # =====================================================
 if st.session_state.page=="Katalog":
 
-    for i,p in products.iterrows():
-        st.markdown("<div class='card'>",unsafe_allow_html=True)
+    cols=st.columns(3)
 
-        if isinstance(p.image_url,str) and p.image_url.strip()!="" and os.path.exists(p.image_url):
-            st.image(p.image_url,use_column_width=True)
-        else:
-            st.image("https://images.unsplash.com/photo-1580281657527-47b4c09841b4",
-                     use_column_width=True)
+    for idx,p in products.iterrows():
+        col=cols[idx%3]
+        with col:
+            st.markdown("<div class='card'>",unsafe_allow_html=True)
 
-        st.write(f"**{p.product_name}**")
-        st.caption(f"Kategori: {p.category}")
-        st.caption(f"Stok: {int(p.stock)}")
-        st.write("⭐"*int(round(float(p.rating))))
-        st.markdown(f"<div class='price'>Rp {int(p.price):,}</div>",
-                    unsafe_allow_html=True)
+            if p.image_url and os.path.exists(p.image_url):
+                st.image(p.image_url,use_column_width=True)
+            else:
+                st.image("https://images.unsplash.com/photo-1580281657527-47b4c09841b4",
+                         use_column_width=True)
 
-        st.markdown("</div>",unsafe_allow_html=True)
+            st.write(f"**{p.product_name}**")
+            st.caption(p.category)
+            st.write("⭐"*int(round(float(p.rating))))
+            st.markdown(f"<div class='price'>Rp {int(p.price):,}</div>",
+                        unsafe_allow_html=True)
 
-# =====================================================
-# DASHBOARD
-# =====================================================
-if st.session_state.page=="Dashboard" and role=="admin":
-    st.subheader("📊 Statistik Marketplace")
-    col1,col2,col3=st.columns(3)
-    col1.metric("Total Produk",len(products))
-    col2.metric("Total Stok",products.stock.sum())
-    col3.metric("Total Order",len(orders))
-    st.dataframe(products)
+            st.markdown("</div>",unsafe_allow_html=True)
