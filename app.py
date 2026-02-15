@@ -73,6 +73,19 @@ def init_file(file,cols):
         pd.DataFrame(columns=cols).to_csv(file,index=False)
 
 init_file(USER_FILE,["username","password","role"])
+# =========================
+# AUTO CREATE ADMIN
+# =========================
+users = pd.read_csv(USER_FILE)
+
+if users.empty:
+    admin_account = pd.DataFrame([{
+        "username": "admin",
+        "password": hash_password("admin"),
+        "role": "admin"
+    }])
+
+    admin_account.to_csv(USER_FILE, index=False)
 init_file(PRODUCT_FILE,["id","name","price","discount","seller"])
 init_file(CART_FILE,["user","product_id","name","price","qty"])
 
