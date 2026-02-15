@@ -218,39 +218,48 @@ if search:
 # ==============================
 # GRID PRODUK 4 KOLOM
 # ==============================
-cols=st.columns(4)
+cols = st.columns(4)
 
-for idx,p in products.iterrows():
-    col=cols[idx%4]
+for idx, p in products.iterrows():
+    col = cols[idx % 4]
     with col:
-        st.markdown("<div class='card'>",unsafe_allow_html=True)
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-        st.image("https://images.unsplash.com/photo-1580281657527-47b4c09841b4",use_column_width=True)
+        # ==== SAFE COLUMN HANDLING ====
+        product_name = p["name"] if "name" in products.columns else p.get("product_name", "Produk")
+        product_price = p["price"] if "price" in products.columns else 0
+        product_discount = p["discount"] if "discount" in products.columns else 0
 
-        st.write(f"**{p['name']}**")
+        st.image("https://images.unsplash.com/photo-1580281657527-47b4c09841b4", use_column_width=True)
 
-        if p["discount"]>0:
-            old_price=p["price"]
-            new_price=int(old_price*(100-p["discount"])/100)
-            st.markdown(f"<span class='old-price'>Rp {old_price:,}</span> <span class='discount'>-{p['discount']}%</span>",unsafe_allow_html=True)
-            st.markdown(f"<div class='price'>Rp {new_price:,}</div>",unsafe_allow_html=True)
-            price_used=new_price
+        st.write(f"**{product_name}**")
+
+        if product_discount and product_discount > 0:
+            old_price = product_price
+            new_price = int(old_price * (100 - product_discount) / 100)
+            st.markdown(
+                f"<span class='old-price'>Rp {old_price:,}</span> "
+                f"<span class='discount'>-{product_discount}%</span>",
+                unsafe_allow_html=True
+            )
+            st.markdown(f"<div class='price'>Rp {new_price:,}</div>", unsafe_allow_html=True)
+            price_used = new_price
         else:
-            st.markdown(f"<div class='price'>Rp {p['price']:,}</div>",unsafe_allow_html=True)
-            price_used=p["price"]
+            st.markdown(f"<div class='price'>Rp {product_price:,}</div>", unsafe_allow_html=True)
+            price_used = product_price
 
-        st.markdown("<div class='rating'>★★★★★</div>",unsafe_allow_html=True)
+        st.markdown("<div class='rating'>★★★★★</div>", unsafe_allow_html=True)
 
-        if st.button("Tambah",key=f"add{idx}"):
-            new=pd.DataFrame([{
-                "user":user,
-                "product_id":p["id"],
-                "name":p["name"],
-                "price":price_used,
-                "qty":1
+        if st.button("Tambah", key=f"add{idx}"):
+            new = pd.DataFrame([{
+                "user": user,
+                "product_id": p.get("id", idx),
+                "name": product_name,
+                "price": price_used,
+                "qty": 1
             }])
-            cart=pd.concat([cart,new])
-            cart.to_csv(CART_FILE,index=False)
+            cart = pd.concat([cart, new])
+            cart.to_csv(CART_FILE, index=False)
             st.rerun()
 
-        st.markdown("</div>",unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True))
