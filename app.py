@@ -262,4 +262,4 @@ for idx, p in products.iterrows():
             cart.to_csv(CART_FILE, index=False)
             st.rerun()
 
-        st.markdown("</div>", unsafe_allow_html=True))
+        st.markdown("</div>", unsafe_allow_html=True)
