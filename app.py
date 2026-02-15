@@ -16,10 +16,9 @@ st.set_page_config(
 )
 
 # =====================================================
-# STYLE (FORCE LIGHT + PREMIUM UI)
+# SAFE STYLE (ANTI BOCOR CSS)
 # =====================================================
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 
 body {
@@ -34,11 +33,6 @@ body {
     background: transparent;
 }
 
-html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
-}
-
-/* NAVBAR */
 .navbar {
     position: fixed;
     top: 0;
@@ -54,45 +48,38 @@ html, body, [class*="css"] {
 }
 
 .nav-logo {
-    font-weight: 700;
+    font-weight: bold;
     font-size: 20px;
     color: #d32f2f;
 }
 
 .nav-right {
     display: flex;
-    align-items: center;
     gap: 20px;
-    font-weight: 500;
 }
 
 .block-container {
-    margin-top: 110px;
+    margin-top: 100px;
 }
 
-/* PRODUCT CARD */
 .card {
     background: white;
     padding:18px;
-    border-radius:18px;
+    border-radius:16px;
     box-shadow:0 6px 20px rgba(0,0,0,0.08);
     margin-bottom:20px;
-    transition:0.3s ease;
+    transition:0.3s;
 }
 
 .card:hover {
-    transform:translateY(-8px);
-    box-shadow:0 16px 40px rgba(0,0,0,0.15);
+    transform:translateY(-6px);
+    box-shadow:0 14px 30px rgba(0,0,0,0.15);
 }
 
 .price {
     color:#d32f2f;
     font-weight:600;
     font-size:18px;
-}
-
-.search-box input {
-    border-radius:20px !important;
 }
 
 </style>
@@ -114,7 +101,6 @@ def show_loading(msg="Memproses..."):
 USER_FILE="users.csv"
 PRODUCT_FILE="products.csv"
 CART_FILE="cart.csv"
-ORDER_FILE="orders.csv"
 
 def init_file(file, cols):
     if not os.path.exists(file):
@@ -128,9 +114,6 @@ init_file(PRODUCT_FILE,[
 init_file(CART_FILE,[
     "user","product_id","product_name",
     "price","qty","seller"
-])
-init_file(ORDER_FILE,[
-    "order_id","user","product","total","seller","admin_fee"
 ])
 
 # =====================================================
@@ -185,8 +168,6 @@ if "user" not in st.session_state:
     st.session_state.user=None
 if "role" not in st.session_state:
     st.session_state.role=None
-if "page" not in st.session_state:
-    st.session_state.page="Katalog"
 
 # =====================================================
 # LOGIN
@@ -202,7 +183,6 @@ def login():
             match=users[(users.username==u)&
                         (users.password==hash_password(p))]
             if not match.empty:
-                show_loading("Login berhasil...")
                 st.session_state.user=u
                 st.session_state.role=match.iloc[0]["role"]
                 st.rerun()
@@ -233,10 +213,8 @@ if st.session_state.user is None:
 products=pd.read_csv(PRODUCT_FILE)
 products["image_url"]=products["image_url"].fillna("")
 cart=pd.read_csv(CART_FILE)
-orders=pd.read_csv(ORDER_FILE)
 
 user=st.session_state.user
-role=st.session_state.role
 cart_count=len(cart[cart.user==user])
 
 # =====================================================
@@ -252,35 +230,36 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# =====================================================
 # SEARCH
+# =====================================================
 search=st.text_input("🔍 Cari Produk")
+
 if search:
     products=products[
         products["product_name"].str.contains(search,case=False,na=False)
     ]
 
 # =====================================================
-# GRID PRODUK RESPONSIVE
+# GRID PRODUK
 # =====================================================
-if st.session_state.page=="Katalog":
+cols=st.columns(3)
 
-    cols=st.columns(3)
+for idx,p in products.iterrows():
+    col=cols[idx%3]
+    with col:
+        st.markdown("<div class='card'>",unsafe_allow_html=True)
 
-    for idx,p in products.iterrows():
-        col=cols[idx%3]
-        with col:
-            st.markdown("<div class='card'>",unsafe_allow_html=True)
+        if p.image_url and os.path.exists(p.image_url):
+            st.image(p.image_url,use_column_width=True)
+        else:
+            st.image("https://images.unsplash.com/photo-1580281657527-47b4c09841b4",
+                     use_column_width=True)
 
-            if p.image_url and os.path.exists(p.image_url):
-                st.image(p.image_url,use_column_width=True)
-            else:
-                st.image("https://images.unsplash.com/photo-1580281657527-47b4c09841b4",
-                         use_column_width=True)
+        st.write(f"**{p.product_name}**")
+        st.caption(p.category)
+        st.write("⭐"*int(round(float(p.rating))))
+        st.markdown(f"<div class='price'>Rp {int(p.price):,}</div>",
+                    unsafe_allow_html=True)
 
-            st.write(f"**{p.product_name}**")
-            st.caption(p.category)
-            st.write("⭐"*int(round(float(p.rating))))
-            st.markdown(f"<div class='price'>Rp {int(p.price):,}</div>",
-                        unsafe_allow_html=True)
-
-            st.markdown("</div>",unsafe_allow_html=True)
+        st.markdown("</div>",unsafe_allow_html=True)
