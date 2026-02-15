@@ -1,20 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
-import random
 import hashlib
 
 st.set_page_config(page_title="Toko Emergency", page_icon="🚑", layout="wide")
 
 # =========================
-# STYLE MOBILE
+# STYLE
 # =========================
 st.markdown("""
 <style>
-html, body {
-    background:#f5f5f5 !important;
-}
-
 .navbar {
     position:fixed;
     top:0; left:0; right:0;
@@ -25,21 +20,18 @@ html, body {
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
     z-index:999;
 }
-
 .logo {
     font-weight:bold;
     color:#ee4d2d;
 }
-
 .hero {
     background:linear-gradient(135deg,#ff6a00,#ee0979);
-    padding:25px;
+    padding:20px;
     color:white;
     border-radius:10px;
     margin-top:60px;
     margin-bottom:20px;
 }
-
 .card {
     background:white;
     padding:10px;
@@ -47,12 +39,10 @@ html, body {
     margin-bottom:15px;
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
-
 .price {
     color:#ee4d2d;
     font-weight:bold;
 }
-
 .old {
     text-decoration:line-through;
     color:grey;
@@ -73,27 +63,27 @@ def init_file(file,cols):
         pd.DataFrame(columns=cols).to_csv(file,index=False)
 
 init_file(USER_FILE,["username","password","role"])
+init_file(PRODUCT_FILE,["id","name","price","discount","seller"])
+init_file(CART_FILE,["user","product_id","name","price","qty"])
+
+# =========================
+# HASH FUNCTION
+# =========================
+def hash_password(p):
+    return hashlib.sha256(p.encode()).hexdigest()
+
 # =========================
 # AUTO CREATE ADMIN
 # =========================
 users = pd.read_csv(USER_FILE)
 
 if users.empty:
-    admin_account = pd.DataFrame([{
-        "username": "admin",
-        "password": hash_password("admin"),
-        "role": "admin"
+    admin = pd.DataFrame([{
+        "username":"admin",
+        "password":hash_password("admin"),
+        "role":"admin"
     }])
-
-    admin_account.to_csv(USER_FILE, index=False)
-init_file(PRODUCT_FILE,["id","name","price","discount","seller"])
-init_file(CART_FILE,["user","product_id","name","price","qty"])
-
-# =========================
-# HASH
-# =========================
-def hash_password(p):
-    return hashlib.sha256(p.encode()).hexdigest()
+    admin.to_csv(USER_FILE,index=False)
 
 # =========================
 # SESSION
@@ -108,33 +98,41 @@ if "role" not in st.session_state:
 # LOGIN REGISTER
 # =========================
 def login():
+
     users=pd.read_csv(USER_FILE)
 
     tab1,tab2=st.tabs(["Login","Register"])
 
     with tab1:
+
         u=st.text_input("Username")
         p=st.text_input("Password",type="password")
 
         if st.button("Login"):
+
             match=users[
                 (users.username==u) &
                 (users.password==hash_password(p))
             ]
 
             if not match.empty:
+
                 st.session_state.user=u
                 st.session_state.role=match.iloc[0]["role"]
+
                 st.rerun()
+
             else:
                 st.error("Login gagal")
 
     with tab2:
+
         u=st.text_input("Username Baru")
         p=st.text_input("Password Baru",type="password")
-        role=st.selectbox("Daftar sebagai",["buyer","seller"])
+        role=st.selectbox("Role",["buyer","seller"])
 
         if st.button("Register"):
+
             new=pd.DataFrame([{
                 "username":u,
                 "password":hash_password(p),
@@ -150,6 +148,7 @@ def login():
 # STOP jika belum login
 # =========================
 if st.session_state.user is None:
+
     login()
     st.stop()
 
@@ -180,7 +179,7 @@ if st.button("Logout"):
     st.rerun()
 
 # =========================
-# ADMIN DASHBOARD
+# ADMIN
 # =========================
 if role=="admin":
 
@@ -193,7 +192,7 @@ if role=="admin":
     st.dataframe(products)
 
 # =========================
-# SELLER DASHBOARD
+# SELLER
 # =========================
 elif role=="seller":
 
@@ -201,7 +200,7 @@ elif role=="seller":
 
     name=st.text_input("Nama Produk")
     price=st.number_input("Harga",0)
-    discount=st.slider("Discount %",0,90,0)
+    discount=st.slider("Discount",0,90,0)
 
     if st.button("Tambah Produk"):
 
@@ -220,7 +219,7 @@ elif role=="seller":
         products=pd.concat([products,new])
         products.to_csv(PRODUCT_FILE,index=False)
 
-        st.success("Produk berhasil ditambahkan")
+        st.success("Produk ditambah")
         st.rerun()
 
     st.subheader("Produk Saya")
@@ -230,14 +229,13 @@ elif role=="seller":
     st.dataframe(my)
 
 # =========================
-# BUYER DASHBOARD
+# BUYER
 # =========================
 elif role=="buyer":
 
     st.markdown("""
     <div class="hero">
-    <h3>Promo Hari Ini 🔥</h3>
-    Diskon sampai 90%
+    Promo Hari Ini 🔥
     </div>
     """, unsafe_allow_html=True)
 
@@ -250,11 +248,6 @@ elif role=="buyer":
         with col:
 
             st.markdown("<div class='card'>", unsafe_allow_html=True)
-
-            st.image(
-                "https://images.unsplash.com/photo-1580281657527-47b4c09841b4",
-                use_column_width=True
-            )
 
             st.write(p["name"])
 
@@ -275,7 +268,7 @@ elif role=="buyer":
                     unsafe_allow_html=True
                 )
 
-                final_price=new_price
+                final=new_price
 
             else:
 
@@ -284,7 +277,7 @@ elif role=="buyer":
                     unsafe_allow_html=True
                 )
 
-                final_price=price
+                final=price
 
             if st.button("Tambah",key=idx):
 
@@ -292,7 +285,7 @@ elif role=="buyer":
                     "user":user,
                     "product_id":p["id"],
                     "name":p["name"],
-                    "price":final_price,
+                    "price":final,
                     "qty":1
                 }])
 
@@ -312,4 +305,4 @@ elif role=="buyer":
 
     total=mycart.price.sum()
 
-    st.write("Total: Rp", total)
+    st.write("Total:", total)
