@@ -2,101 +2,127 @@ import streamlit as st
 import pandas as pd
 import os
 import hashlib
+import random
 
-st.set_page_config(page_title="Toko Emergency", page_icon="🚑", layout="wide")
+st.set_page_config(page_title="Marketplace Emergency", page_icon="🚑", layout="wide")
 
-# =========================
+# =============================
 # STYLE
-# =========================
+# =============================
 st.markdown("""
 <style>
 .navbar {
-    position:fixed;
-    top:0; left:0; right:0;
-    background:white;
-    padding:10px;
-    display:flex;
-    justify-content:space-between;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-    z-index:999;
+ position:fixed;
+ top:0; left:0; right:0;
+ background:white;
+ padding:10px;
+ display:flex;
+ justify-content:space-between;
+ box-shadow:0 2px 10px rgba(0,0,0,0.1);
+ z-index:999;
 }
 .logo {
-    font-weight:bold;
-    color:#ee4d2d;
+ font-weight:bold;
+ color:#ee4d2d;
 }
 .hero {
-    background:linear-gradient(135deg,#ff6a00,#ee0979);
-    padding:20px;
-    color:white;
-    border-radius:10px;
-    margin-top:60px;
-    margin-bottom:20px;
+ background:linear-gradient(135deg,#ff6a00,#ee0979);
+ padding:20px;
+ color:white;
+ border-radius:10px;
+ margin-top:60px;
+ margin-bottom:20px;
 }
 .card {
-    background:white;
-    padding:10px;
-    border-radius:10px;
-    margin-bottom:15px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+ background:white;
+ padding:10px;
+ border-radius:10px;
+ margin-bottom:15px;
+ box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 .price {
-    color:#ee4d2d;
-    font-weight:bold;
+ color:#ee4d2d;
+ font-weight:bold;
 }
 .old {
-    text-decoration:line-through;
-    color:grey;
-    font-size:12px;
+ text-decoration:line-through;
+ color:grey;
+ font-size:12px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# FILE SETUP
-# =========================
+# =============================
+# FILE PATH
+# =============================
 USER_FILE="users.csv"
 PRODUCT_FILE="products.csv"
 CART_FILE="cart.csv"
 
-def init_file(file,cols):
-    if not os.path.exists(file):
-        pd.DataFrame(columns=cols).to_csv(file,index=False)
-
-init_file(USER_FILE,["username","password","role"])
-init_file(PRODUCT_FILE,["id","name","price","discount","seller"])
-init_file(CART_FILE,["user","product_id","name","price","qty"])
-
-# =========================
+# =============================
 # HASH FUNCTION
-# =========================
+# =============================
 def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
 
-# =========================
-# AUTO CREATE ADMIN
-# =========================
-users = pd.read_csv(USER_FILE)
+# =============================
+# AUTO CREATE USERS
+# =============================
+if not os.path.exists(USER_FILE):
 
-if users.empty:
-    admin = pd.DataFrame([{
-        "username":"admin",
-        "password":hash_password("admin"),
-        "role":"admin"
-    }])
-    admin.to_csv(USER_FILE,index=False)
+    users=pd.DataFrame([
+        {"username":"admin","password":hash_password("admin"),"role":"admin"},
+        {"username":"buyer","password":hash_password("buyer"),"role":"buyer"},
+        {"username":"seller","password":hash_password("seller"),"role":"seller"}
+    ])
 
-# =========================
+    users.to_csv(USER_FILE,index=False)
+
+# =============================
+# AUTO CREATE PRODUCTS + IMAGE
+# =============================
+if not os.path.exists(PRODUCT_FILE):
+
+    images=[
+        "https://images.unsplash.com/photo-1580281657527-47b4c09841b4",
+        "https://images.unsplash.com/photo-1588776814546-ec7e2b8d06f2",
+        "https://images.unsplash.com/photo-1585435557343-3b092031a831",
+        "https://images.unsplash.com/photo-1603398938378-e54eab446dde",
+        "https://images.unsplash.com/photo-1587854692152-cbe660dbde88"
+    ]
+
+    data=[]
+    for i in range(1,21):
+
+        data.append({
+            "id":i,
+            "name":f"Produk Kesehatan {i}",
+            "price":random.randint(20000,100000),
+            "discount":random.choice([0,10,20,30]),
+            "seller":"seller",
+            "image":random.choice(images)
+        })
+
+    pd.DataFrame(data).to_csv(PRODUCT_FILE,index=False)
+
+# =============================
+# AUTO CREATE CART
+# =============================
+if not os.path.exists(CART_FILE):
+    pd.DataFrame(columns=["user","product_id","name","price","qty"]).to_csv(CART_FILE,index=False)
+
+# =============================
 # SESSION
-# =========================
+# =============================
 if "user" not in st.session_state:
     st.session_state.user=None
 
 if "role" not in st.session_state:
     st.session_state.role=None
 
-# =========================
+# =============================
 # LOGIN REGISTER
-# =========================
+# =============================
 def login():
 
     users=pd.read_csv(USER_FILE)
@@ -144,9 +170,9 @@ def login():
 
             st.success("Register berhasil")
 
-# =========================
+# =============================
 # STOP jika belum login
-# =========================
+# =============================
 if st.session_state.user is None:
 
     login()
@@ -158,29 +184,31 @@ role=st.session_state.role
 products=pd.read_csv(PRODUCT_FILE)
 cart=pd.read_csv(CART_FILE)
 
-# =========================
+# =============================
 # NAVBAR
-# =========================
+# =============================
 cart_count=len(cart[cart.user==user])
 
 st.markdown(f"""
 <div class="navbar">
-<div class="logo">🚑 Toko Emergency</div>
+<div class="logo">🚑 Marketplace Emergency</div>
 <div>{role.upper()} | 🛒 {cart_count}</div>
 </div>
 """, unsafe_allow_html=True)
 
-# =========================
+# =============================
 # LOGOUT
-# =========================
+# =============================
 if st.button("Logout"):
+
     st.session_state.user=None
     st.session_state.role=None
+
     st.rerun()
 
-# =========================
+# =============================
 # ADMIN
-# =========================
+# =============================
 if role=="admin":
 
     st.title("Dashboard Admin")
@@ -191,9 +219,9 @@ if role=="admin":
     st.subheader("Products")
     st.dataframe(products)
 
-# =========================
+# =============================
 # SELLER
-# =========================
+# =============================
 elif role=="seller":
 
     st.title("Dashboard Seller")
@@ -204,16 +232,17 @@ elif role=="seller":
 
     if st.button("Tambah Produk"):
 
-        new_id=1
-        if not products.empty:
-            new_id=products.id.max()+1
+        new_id=products.id.max()+1 if not products.empty else 1
+
+        image=random.choice(products.image.tolist())
 
         new=pd.DataFrame([{
             "id":new_id,
             "name":name,
             "price":price,
             "discount":discount,
-            "seller":user
+            "seller":user,
+            "image":image
         }])
 
         products=pd.concat([products,new])
@@ -224,13 +253,11 @@ elif role=="seller":
 
     st.subheader("Produk Saya")
 
-    my=products[products.seller==user]
+    st.dataframe(products[products.seller==user])
 
-    st.dataframe(my)
-
-# =========================
+# =============================
 # BUYER
-# =========================
+# =============================
 elif role=="buyer":
 
     st.markdown("""
@@ -249,35 +276,22 @@ elif role=="buyer":
 
             st.markdown("<div class='card'>", unsafe_allow_html=True)
 
+            st.image(p["image"],use_column_width=True)
+
             st.write(p["name"])
 
             price=p["price"]
             discount=p["discount"]
 
+            final=price
+
             if discount>0:
 
-                new_price=int(price*(100-discount)/100)
+                final=int(price*(100-discount)/100)
 
-                st.markdown(
-                    f"<span class='old'>Rp {price:,}</span>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"<span class='old'>Rp {price:,}</span>", unsafe_allow_html=True)
 
-                st.markdown(
-                    f"<div class='price'>Rp {new_price:,}</div>",
-                    unsafe_allow_html=True
-                )
-
-                final=new_price
-
-            else:
-
-                st.markdown(
-                    f"<div class='price'>Rp {price:,}</div>",
-                    unsafe_allow_html=True
-                )
-
-                final=price
+            st.markdown(f"<div class='price'>Rp {final:,}</div>", unsafe_allow_html=True)
 
             if st.button("Tambah",key=idx):
 
@@ -303,6 +317,4 @@ elif role=="buyer":
 
     st.dataframe(mycart)
 
-    total=mycart.price.sum()
-
-    st.write("Total:", total)
+    st.write("Total:", mycart.price.sum())
